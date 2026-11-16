@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI Box · 场景选型与 AI 工具导航</title>
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('aibox.theme');
+          if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+        } catch (e) {}
+      })();
+    </script>
+    <meta
+      name="description"
+      content="按场景选型 AI 工具，每日精选与资讯聚合。少而精，可对比，可提交收录。"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,500;0,9..40,700;0,9..40,800;1,9..40,500&family=Noto+Sans+SC:wght@500;700;900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar" id="sidebar"></aside>
+      <div class="stage">
+        <header class="hero">
+          <div class="hero-top">
+            <div class="brand-lockup">
+              <div class="mark">AI</div>
+              <div>
+                <div class="brand-name">AI Box</div>
+                <div class="brand-sub">场景选型 · 每日精选 · 工具导航</div>
+              </div>
+            </div>
+            <div class="hero-right">
+              <div class="theme-toggle" id="themeToggle" role="group" aria-label="主题切换">
+                <button type="button" data-theme="light" class="active">白色</button>
+                <button type="button" data-theme="dark">黑色</button>
+              </div>
+              <div class="hero-meta" id="clock"></div>
+            </div>
+          </div>
+          <div class="search-tabs" id="searchTabs">
+            <button class="tab active" data-mode="site">站内</button>
+            <button class="tab" data-mode="google">Google</button>
+            <button class="tab" data-mode="bing">Bing</button>
+            <button class="tab" data-mode="ddg">DuckDuckGo</button>
+          </div>
+          <form class="search-box" id="searchForm">
+            <input
+              id="search"
+              type="search"
+              placeholder="搜索场景、工具、Agent、MCP…"
+              autocomplete="off"
+            />
+            <button type="submit">搜索</button>
+          </form>
+          <div class="engines">
+            <span>产品入口</span>
+            <a href="#daily">今日 AI</a>
+            <a href="#scenes">场景选型</a>
+            <a href="#github">GitHub 周榜</a>
+            <a href="#submit">提交收录</a>
+            <a href="#standards">精选标准</a>
+          </div>
+        </header>
+
+        <main class="main" id="main">
+          <!-- 工具详情（hash #tool/名称） -->
+          <section class="section detail-view" id="toolDetail" hidden></section>
+
+          <div id="browseView">
+            <section class="section" id="daily">
+              <div class="section-head">
+                <h2>今日 AI</h2>
+                <span class="hint" id="dailyHint">回访钩子 · 日更精选</span>
+              </div>
+              <div id="dailyRoot"></div>
+            </section>
+
+            <section class="section" id="scenes">
+              <div class="section-head">
+                <h2>场景选型</h2>
+                <span class="hint">每个场景 ≤8 个精选，先决策再目录</span>
+              </div>
+              <div id="scenesRoot"></div>
+            </section>
+
+            <section class="section" id="news">
+              <div class="section-head">
+                <h2>最新资讯</h2>
+                <div class="section-actions">
+                  <div class="lang-toggle" id="newsLangToggle" role="group" aria-label="资讯语言">
+                    <button type="button" class="lang-btn" data-lang="zh">中文</button>
+                    <button type="button" class="lang-btn" data-lang="en">English</button>
+                    <button type="button" class="lang-btn active" data-lang="bi">双语</button>
+                  </div>
+                  <button id="refreshNews" type="button">刷新</button>
+                  <span class="hint" id="newsHint">聚合公开 RSS / API</span>
+                </div>
+              </div>
+              <div class="news-grid" id="newsGrid">
+                <div class="news-skeleton"></div>
+                <div class="news-skeleton"></div>
+                <div class="news-skeleton"></div>
+                <div class="news-skeleton"></div>
+              </div>
+            </section>
+
+            <section class="section" id="github">
+              <div class="section-head">
+                <h2>GitHub 周榜</h2>
+                <div class="section-actions">
+                  <div class="lang-toggle" id="ghTabToggle" role="group" aria-label="周榜分类">
+                    <button type="button" class="lang-btn active" data-tab="ranking">综合</button>
+                    <button type="button" class="lang-btn" data-tab="newborn">本周新晋</button>
+                    <button type="button" class="lang-btn" data-tab="ai">AI 相关</button>
+                    <button type="button" class="lang-btn" data-tab="active">高星活跃</button>
+                  </div>
+                  <button id="refreshGithub" type="button">刷新</button>
+                  <span class="hint" id="githubHint">近 7 日高分开源 · 摘要随资讯语言切换</span>
+                </div>
+              </div>
+              <div id="githubRoot"></div>
+            </section>
+
+            <section class="section" id="recommend">
+              <div class="section-head"><h2>常用推荐</h2></div>
+              <div class="tool-grid" id="recommendGrid"></div>
+            </section>
+
+            <div id="catalog"></div>
+
+            <section class="section" id="standards">
+              <div class="section-head">
+                <h2>精选标准</h2>
+                <span class="hint">编辑与广告分离 · 建立信任</span>
+              </div>
+              <div id="standardsRoot"></div>
+            </section>
+
+            <section class="section" id="submit">
+              <div class="section-head">
+                <h2>提交收录</h2>
+                <span class="hint">用户贡献闭环 · 本地暂存待审核</span>
+              </div>
+              <div id="submitRoot"></div>
+            </section>
+          </div>
+        </main>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

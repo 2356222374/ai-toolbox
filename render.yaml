@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: ai-box
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    autoDeployTrigger: commit
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: GITHUB_TOKEN
+        sync: false

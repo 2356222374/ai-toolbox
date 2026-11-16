@@ -1,0 +1,27 @@
+{
+  "total": 825,
+  "perCat": {
+    "chat": 60,
+    "writing": 60,
+    "coding": 60,
+    "image": 60,
+    "video": 60,
+    "audio": 60,
+    "office": 60,
+    "agent": 60,
+    "search": 60,
+    "design": 60,
+    "devplat": 60,
+    "market": 19,
+    "learn": 60,
+    "detect": 26,
+    "other": 60
+  },
+  "sources": [
+    "spiderbox.cn",
+    "ai-bot.cn",
+    "aishenqi.net",
+    "aigc.cn",
+    "feizhuke.com"
+  ]
+}
