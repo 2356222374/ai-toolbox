@@ -6,6 +6,7 @@ import { URL } from 'node:url';
 import { aggregateNews } from './feeds.mjs';
 import { enrichNewsBilingual } from './translate.mjs';
 import { fetchGithubWeekly } from './github-weekly.mjs';
+import { ensureVisitorId, snapshot, trackEvent } from './stats.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -89,8 +90,10 @@ function serveStatic(reqPath, res) {
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url || '/', `http://${req.headers.host}`);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
+  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
     res.end();
@@ -99,6 +102,45 @@ const server = http.createServer(async (req, res) => {
 
   if (url.pathname === '/api/health') {
     sendJson(res, 200, { ok: true, service: 'ai-box' });
+    return;
+  }
+
+  if (url.pathname === '/api/stats') {
+    sendJson(res, 200, snapshot());
+    return;
+  }
+
+  if (url.pathname === '/api/track' && req.method === 'POST') {
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk;
+      if (body.length > 8_000) req.destroy();
+    });
+    req.on('end', () => {
+      let payload = {};
+      try {
+        payload = body ? JSON.parse(body) : {};
+      } catch {
+        payload = {};
+      }
+      const { id, isNew } = ensureVisitorId(req.headers.cookie || '');
+      const stats = trackEvent({
+        path: payload.path || payload.hash || 'home',
+        visitorId: id,
+        userAgent: req.headers['user-agent'] || '',
+      });
+      const headers = {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Access-Control-Allow-Origin': req.headers.origin || '*',
+        'Access-Control-Allow-Credentials': 'true',
+      };
+      if (isNew) {
+        headers['Set-Cookie'] =
+          `aibox_vid=${id}; Path=/; Max-Age=31536000; SameSite=Lax`;
+      }
+      res.writeHead(200, headers);
+      res.end(JSON.stringify({ ok: true, visitor: id, stats }));
+    });
     return;
   }
 

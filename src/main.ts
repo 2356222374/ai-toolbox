@@ -46,6 +46,7 @@ const clock = document.getElementById('clock')!;
 const themeToggle = document.getElementById('themeToggle');
 const refreshNews = document.getElementById('refreshNews') as HTMLButtonElement;
 const refreshGithub = document.getElementById('refreshGithub') as HTMLButtonElement;
+const visitStats = document.getElementById('visitStats') as HTMLAnchorElement | null;
 
 type ThemeMode = 'light' | 'dark';
 let themeMode: ThemeMode =
@@ -829,11 +830,77 @@ document.getElementById('ghTabToggle')?.addEventListener('click', (e) => {
   if (lastGh) renderGithub(lastGh, lastGhMetaBase);
 });
 
-window.addEventListener('hashchange', route);
+window.addEventListener('hashchange', () => {
+  route();
+  void trackPageview();
+});
 
 const initialHash = decodeURIComponent(location.hash.replace(/^#/, ''));
 if (AI_TABS.some((t) => t.id === initialHash)) activeAiTab = initialHash;
 if (SCENES.some((s) => s.id === initialHash)) activeScene = initialHash;
+
+type VisitSnapshot = {
+  today?: { pageviews?: number; visitors?: number };
+  totalPageviews?: number;
+  totalVisitors?: number;
+};
+
+function currentTrackPath(): string {
+  const hash = decodeURIComponent(location.hash.replace(/^#/, '')).trim();
+  return hash || 'home';
+}
+
+function renderVisitStats(stats: VisitSnapshot | null | undefined): void {
+  if (!visitStats || !stats) return;
+  const todayPv = stats.today?.pageviews ?? 0;
+  const todayUv = stats.today?.visitors ?? 0;
+  const totalUv = stats.totalVisitors ?? 0;
+  visitStats.hidden = false;
+  visitStats.textContent = `今日 ${todayUv} 人 / ${todayPv} 次 · 累计 ${totalUv} 人`;
+}
+
+async function apiBase(): Promise<string> {
+  for (const base of API_CANDIDATES) {
+    try {
+      const res = await fetch(`${base}/api/health`, { credentials: 'include' });
+      if (res.ok) return base;
+    } catch {
+      /* try next */
+    }
+  }
+  return API_CANDIDATES[0] || '';
+}
+
+let cachedApiBase: string | null = null;
+
+async function trackPageview(): Promise<void> {
+  try {
+    if (cachedApiBase === null) cachedApiBase = await apiBase();
+    const base = cachedApiBase;
+    const res = await fetch(`${base}/api/track`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: currentTrackPath() }),
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    renderVisitStats(data.stats);
+  } catch {
+    /* analytics must never break UI */
+  }
+}
+
+async function loadVisitStats(): Promise<void> {
+  try {
+    if (cachedApiBase === null) cachedApiBase = await apiBase();
+    const res = await fetch(`${cachedApiBase}/api/stats`, { credentials: 'include' });
+    if (!res.ok) return;
+    renderVisitStats(await res.json());
+  } catch {
+    /* ignore */
+  }
+}
 
 applyTheme(themeMode);
 renderSidebar();
@@ -849,3 +916,6 @@ tickClock();
 setInterval(tickClock, 1000);
 void loadNews(false);
 void loadGithubWeekly(false);
+void trackPageview();
+void loadVisitStats();
+setInterval(() => void loadVisitStats(), 60_000);
